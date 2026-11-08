@@ -9,10 +9,12 @@ One-knob saturation plugin (VST3 / AU) by **@BUYORBEALOSER** — a sniper you ch
   Shooting a dancer stutters his frequency band for 0.4 s.
 - Skins: Stock, Black Chrome, Red Tiger, Glitch.
 
-## Download (macOS)
+## Download
 
-Every push to `main` builds a universal (Apple Silicon + Intel) zip:
-**Releases → `latest` → `ACE-mac.zip`**. Install steps: [`INSTALL-MAC.txt`](INSTALL-MAC.txt).
+Every push to `main` builds both platforms and updates **Releases → `latest`**:
+
+- `ACE-mac.zip` — universal (Apple Silicon + Intel) VST3, AU, Standalone — [`INSTALL-MAC.txt`](INSTALL-MAC.txt)
+- `ACE-windows.zip` — 64-bit VST3 + Standalone (UI via Edge WebView2) — [`INSTALL-WINDOWS.txt`](INSTALL-WINDOWS.txt)
 
 ## Project layout
 

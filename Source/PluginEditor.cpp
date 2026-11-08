@@ -16,10 +16,23 @@ namespace
     }
 }
 
+static juce::WebBrowserComponent::Options baseOptions()
+{
+    auto o = juce::WebBrowserComponent::Options{};
+   #if JUCE_WINDOWS
+    // WebView2 needs a writable profile folder (plugins live in Program Files)
+    o = o.withBackend (juce::WebBrowserComponent::Options::Backend::webview2)
+         .withWinWebView2Options (juce::WebBrowserComponent::Options::WinWebView2{}
+                                      .withUserDataFolder (juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                                               .getChildFile ("ACE_WebView2")));
+   #endif
+    return o;
+}
+
 AceAudioProcessorEditor::AceAudioProcessorEditor (AceAudioProcessor& p)
     : AudioProcessorEditor (&p),
       proc (p),
-      web (juce::WebBrowserComponent::Options{}
+      web (baseOptions()
                .withNativeIntegrationEnabled()
                .withKeepPageLoadedWhenBrowserIsHidden()
                .withResourceProvider ([this] (const juce::String& url) { return getResource (url); })

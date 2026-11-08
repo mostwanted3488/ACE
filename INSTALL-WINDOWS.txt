@@ -1,0 +1,26 @@
+ACE — installation sur Windows
+==============================
+
+1. Copier le dossier ACE.vst3 dans :
+   C:\Program Files\Common Files\VST3\
+
+2. L'interface utilise Microsoft Edge WebView2, déjà installé sur Windows 10 et 11.
+   Si la fenêtre du plugin reste noire, installe le « WebView2 Runtime » (Evergreen) :
+   https://developer.microsoft.com/microsoft-edge/webview2/
+
+3. Dans FL Studio : Options > Manage plugins > Find more plugins (rescan),
+   puis ACE apparaît dans les effets.
+
+ACE.exe est la version autonome (pratique pour tester sans FL Studio).
+
+Contrôles
+---------
+- Glisser le sniper vers le haut / le bas : la charge (0-100 %). Molette = pas fin, double-clic = 0.
+- SOFT / HARD / BIT (ou touches 1-2-3) : la munition = le type de saturation.
+- SUPPRESSOR : le mix propre / saturé.
+- SAFETY : bypass.
+- Clic sur la lunette ou touche S : la vue lunette. Vise les danseurs, clic = tir
+  (la fréquence du danseur touché est coupée en saccades). S / Échap / clic droit pour fermer.
+- SKIN : l'apparence de l'arme (sauvegardée avec le projet).
+
+Charge, munition, mix et safety sont automatisables dans FL Studio.

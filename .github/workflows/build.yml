@@ -1,4 +1,4 @@
-name: Build macOS
+name: Build macOS + Windows
 
 on:
   push:
@@ -77,12 +77,73 @@ jobs:
           name: ACE-mac
           path: dist/ACE-mac.zip
 
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get WebView2 SDK (NuGet)
+        shell: pwsh
+        run: |
+          $v = "1.0.1901.177"
+          New-Item -ItemType Directory -Force -Path nuget | Out-Null
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/$v" -OutFile wv2.zip
+          Expand-Archive wv2.zip -DestinationPath "nuget/Microsoft.Web.WebView2.$v"
+
+      - name: Configure
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DJUCE_WEBVIEW2_PACKAGE_LOCATION="${{ github.workspace }}/nuget"
+
+      - name: Build VST3 + Standalone
+        run: cmake --build build --config Release --parallel --target ACE_VST3 ACE_Standalone
+
+      - name: Validate with pluginval
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pv.zip
+          Expand-Archive pv.zip -DestinationPath pv
+          $vst = "build/ACE_artefacts/Release/VST3/ACE.vst3"
+          $p = Start-Process -FilePath "pv/pluginval.exe" -ArgumentList "--strictness-level 5 --skip-gui-tests --validate-in-process --output-dir pv-logs `"$vst`"" -Wait -PassThru -NoNewWindow
+          Get-ChildItem pv-logs -Recurse -File | ForEach-Object { Get-Content $_.FullName | Select-Object -Last 15 }
+          if ($p.ExitCode -ne 0) { Write-Error "pluginval failed ($($p.ExitCode))"; exit 1 }
+
+      - name: GUI check (editor opens in WebView2)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $vst = "build/ACE_artefacts/Release/VST3/ACE.vst3"
+          $p = Start-Process -FilePath "pv/pluginval.exe" -ArgumentList "--strictness-level 3 --validate-in-process --output-dir pv-gui-logs `"$vst`"" -Wait -PassThru -NoNewWindow
+          Get-ChildItem pv-gui-logs -Recurse -File | ForEach-Object { Get-Content $_.FullName | Select-String -Pattern "Editor|SUCCESS|FAIL" }
+          "GUI pluginval exit code: $($p.ExitCode)"
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/ACE-windows | Out-Null
+          Copy-Item -Recurse build/ACE_artefacts/Release/VST3/ACE.vst3 dist/ACE-windows/
+          Copy-Item build/ACE_artefacts/Release/Standalone/ACE.exe dist/ACE-windows/
+          Copy-Item INSTALL-WINDOWS.txt dist/ACE-windows/
+          Compress-Archive -Path dist/ACE-windows -DestinationPath dist/ACE-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ACE-windows
+          path: dist/ACE-windows.zip
+
+  release:
+    needs: [ mac, windows ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dl
+
       - name: Publish "latest" release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest dist/ACE-mac.zip \
-            --title "ACE — macOS (latest build)" \
-            --notes "Universal build (Apple Silicon + Intel). VST3, AU and Standalone. See INSTALL-MAC.txt inside the zip." \
+          gh release create latest dl/ACE-mac/ACE-mac.zip dl/ACE-windows/ACE-windows.zip \
+            --title "ACE — latest build (macOS + Windows)" \
+            --notes "macOS: universal (Apple Silicon + Intel) VST3, AU, Standalone. Windows: 64-bit VST3 + Standalone. Install steps are inside each zip." \
             --target "${{ github.sha }}"
