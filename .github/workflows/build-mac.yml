@@ -1,0 +1,64 @@
+name: Build macOS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (universal arm64 + x86_64)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+
+      - name: Build VST3 + AU + Standalone
+        run: cmake --build build --config Release --parallel 4 --target ACE_VST3 ACE_AU ACE_Standalone
+
+      - name: Ad-hoc sign
+        run: |
+          ART=build/ACE_artefacts/Release
+          ls -R "$ART" | head -50
+          codesign --force --deep --sign - "$ART/VST3/ACE.vst3"
+          codesign --force --deep --sign - "$ART/AU/ACE.component"
+          codesign --force --deep --sign - "$ART/Standalone/ACE.app"
+          lipo -info "$ART/VST3/ACE.vst3/Contents/MacOS/ACE"
+
+      - name: Validate with pluginval
+        run: |
+          curl -sSL -o pluginval.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+          unzip -q pluginval.zip
+          ./pluginval.app/Contents/MacOS/pluginval --strictness-level 5 --skip-gui-tests --validate-in-process \
+            --output-dir pluginval-logs "build/ACE_artefacts/Release/VST3/ACE.vst3"
+
+      - name: Package
+        run: |
+          ART=build/ACE_artefacts/Release
+          mkdir -p dist/ACE-mac
+          cp -R "$ART/VST3/ACE.vst3" "$ART/AU/ACE.component" "$ART/Standalone/ACE.app" dist/ACE-mac/
+          cp INSTALL-MAC.txt dist/ACE-mac/
+          cd dist && ditto -c -k --sequesterRsrc --keepParent ACE-mac ACE-mac.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ACE-mac
+          path: dist/ACE-mac.zip
+
+      - name: Publish "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest dist/ACE-mac.zip \
+            --title "ACE — macOS (latest build)" \
+            --notes "Universal build (Apple Silicon + Intel). VST3, AU and Standalone. See INSTALL-MAC.txt inside the zip." \
+            --target "${{ github.sha }}"

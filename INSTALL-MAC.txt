@@ -1,0 +1,28 @@
+ACE — installation sur Mac
+==========================
+
+1. Copier les fichiers :
+   - ACE.vst3      ->  /Library/Audio/Plug-Ins/VST3/        (ou ~/Library/Audio/Plug-Ins/VST3/)
+   - ACE.component ->  /Library/Audio/Plug-Ins/Components/  (ou ~/Library/Audio/Plug-Ins/Components/)
+   - ACE.app       ->  où tu veux (version autonome, pratique pour tester)
+
+2. Le plugin n'est pas signé par Apple : macOS peut le bloquer.
+   Ouvre le Terminal et lance (adapte le chemin si tu l'as mis dans ~/Library) :
+
+   sudo xattr -dr com.apple.quarantine /Library/Audio/Plug-Ins/VST3/ACE.vst3
+   sudo xattr -dr com.apple.quarantine /Library/Audio/Plug-Ins/Components/ACE.component
+
+3. Dans FL Studio : Options > Manage plugins > Find more plugins (rescan),
+   puis ACE apparaît dans les effets (Fx > Distortion).
+
+Contrôles
+---------
+- Glisser le sniper vers le haut / le bas : la charge (0-100 %). Molette = pas fin, double-clic = 0.
+- SOFT / HARD / BIT (ou touches 1-2-3) : la munition = le type de saturation.
+- SUPPRESSOR : le mix propre / saturé.
+- SAFETY : bypass.
+- Clic sur la lunette ou touche S : la vue lunette. Vise les danseurs, clic = tir
+  (la fréquence du danseur touché est coupée en saccades). S / Échap / clic droit pour fermer.
+- SKIN : l'apparence de l'arme (sauvegardée avec le projet).
+
+Charge, munition, mix et safety sont automatisables dans FL Studio.
