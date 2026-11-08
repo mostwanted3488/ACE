@@ -221,7 +221,7 @@ private:
         for (int d = 0; d < numDancers; ++d)
         {
             const float f = bandFreq[(size_t) d].load();
-            if (force || f != appliedFreq[(size_t) d])
+            if (force || std::abs (f - appliedFreq[(size_t) d]) > 0.01f)
             {
                 appliedFreq[(size_t) d] = f;
                 for (auto& c : chans)
