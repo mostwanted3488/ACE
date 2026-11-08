@@ -91,7 +91,7 @@ jobs:
           Expand-Archive wv2.zip -DestinationPath "nuget/Microsoft.Web.WebView2.$v"
 
       - name: Configure
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DJUCE_WEBVIEW2_PACKAGE_LOCATION="${{ github.workspace }}/nuget"
+        run: cmake -B build -A x64 -DJUCE_WEBVIEW2_PACKAGE_LOCATION="${{ github.workspace }}/nuget"
 
       - name: Build VST3 + Standalone
         run: cmake --build build --config Release --parallel --target ACE_VST3 ACE_Standalone
